@@ -126,7 +126,7 @@ var kopened = false
 public func SmartKopen(_ puaf_pages: UInt64? = nil, _ puaf_method: UInt64? = nil, _ headroom: Int = -1, _ forcekfd: Bool = false) throws {
     let kfdtype = deviceInfo.getKFDType()
     if kfdtype != .incompatible || forcekfd {
-        do_kopen(puaf_pages ?? deviceInfo.getPuafPages(), puaf_method ?? (kfdtype == .landa ? 1 : 2), 1, 1, headroom)
+        do_kopen(puaf_pages ?? deviceInfo.getPuafPages(), puaf_method ?? 2, 1, 1, headroom)
         kopened = true
     } else {
         throw "Unsupported Version"
