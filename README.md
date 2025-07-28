@@ -5,6 +5,7 @@ Works on iOS, iPadOS, TvOS, WatchOS and MacOS!
 - import SwiftKFD and SwiftKFD_objc
 - run `try? SmartKopen()` to kopen and `SmartKclose()` to kclose!
 - Thats all! now you can do all your normal kfd stuff
+- API is based on the kfd implementation in [wh1te4ever/kfund](https://github.com/wh1te4ever/kfund)
 
 ## Compatibility:
 - iOS & iPadOS: 16.6.1 and below
