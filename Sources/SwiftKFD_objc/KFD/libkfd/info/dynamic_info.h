@@ -5,7 +5,7 @@
 // #ifndef dynamic_info_h
 // #define dynamic_info_h
 
-// #include "../../fun/kpf/patchfinder.h"
+#include "../../fun/kpf/patchfinder.h"
 
 // struct dynamic_info {
 //     const char* kern_version;
@@ -137,8 +137,11 @@
 // };
 
 // #endif /* dynamic_info_h */
+
+
 /*
- * Edited by c22dev
+ * Edited by c22dev and Arslaan Pathan
+ * Credit to alfiecg_dev for the offsets (taken from TrollInstallerX)
  * Copyright (c) 2023 Félix Poulin-Bélanger. All rights reserved.
  */
 
@@ -147,6 +150,8 @@
 
 struct dynamic_info {
     const char* kern_version;
+    bool kread_kqueue_workloop_ctl_supported;
+    bool perf_supported; 
     u64 fileglob__fg_ops;
     u64 fileglob__fg_data;
     u64 fileops__fo_kqfilter;
