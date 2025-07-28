@@ -220,7 +220,7 @@ struct dynamic_info {
     u64 kernelcache__vn_kqfilter;
 };
 
-const struct dynamic_info kern_versions[] = {
+struct dynamic_info kern_versions[] = {
     {
         .kern_version = "Darwin Kernel Version 21.6.0: Sun Oct 15 00:17:00 PDT 2023; root:xnu-8020.241.42~8/RELEASE_ARM64_S8000",
         .fileglob__fg_ops = 0x10,
