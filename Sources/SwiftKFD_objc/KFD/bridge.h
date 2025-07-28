@@ -7,7 +7,6 @@
 
 #include <Foundation/Foundation.h>
 #include "fun/mdc/helpers.h"
-#include "libkfd.h"
 
 void xpc_crash(NSString *task);
 void overwriteFile2(NSString *from, NSString *to);
