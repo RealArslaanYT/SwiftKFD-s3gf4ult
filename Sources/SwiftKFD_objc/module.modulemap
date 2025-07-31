@@ -9,8 +9,6 @@ module SwiftKFD_objc {
     header "KFD/fun/memoryControl.h"
     header "KFD/fun/mdc/helpers.h"
     header "KFD/fun/offsets.h"
-    header "libjailbreak/libjailbreak/info.h"
-    header "libjailbreak/libjailbreak/primitives_external.h"
     export *
 }
 
