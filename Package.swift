@@ -17,8 +17,13 @@ let package = Package(
             path: "Sources/SwiftKFD"),
         .target(
             name: "SwiftKFD_objc",
-            dependencies: [],
+            dependencies: ["libjailbreak_objc"],
             path: "Sources/SwiftKFD_objc",
+            publicHeadersPath: "."),
+        .target(
+            name: "libjailbreak_objc",
+            dependencies: [],
+            path: "Sources/libjailbreak_objc",
             publicHeadersPath: "."),
     ]
 )
