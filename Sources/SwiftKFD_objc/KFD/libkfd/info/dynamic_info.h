@@ -294,6 +294,14 @@
 
 // #endif /* dynamic_info_h */
 
+
+// below is the REAL one - don't look at any of the code above except for importing patchfinder
+// /*
+//  * Edited by c22dev and Arslaan Pathan
+//  * Credit to alfiecg_dev for the offsets (taken from TrollInstallerX)
+//  * Copyright (c) 2023 Félix Poulin-Bélanger. All rights reserved.
+//  */
+
 #ifndef dynamic_info_h
 #define dynamic_info_h
 
