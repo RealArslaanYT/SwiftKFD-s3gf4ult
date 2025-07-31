@@ -1,4 +1,4 @@
-module SwiftKFD_objc {
+module libjailbreak_objc {
     header "libjailbreak/libjailbreak/info.h"
     header "libjailbreak/libjailbreak/primitives_external.h"
     export *
