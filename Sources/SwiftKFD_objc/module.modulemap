@@ -11,4 +11,3 @@ module SwiftKFD_objc {
     header "KFD/fun/offsets.h"
     export *
 }
-
