@@ -337,7 +337,7 @@ uint64_t kpacda(uint64_t pointer, uint64_t modifier)
 		// | ret                  |
 		// |----------------------|
 		uint64_t output = 0;
-		uint64_t output_kernelVA = phystokv(vtophys(jb_kread_ptr(pmap_self() + koffsetof(pmap, ttep)), (uint64_t)&output));
+		uint64_t output_kernelVA = jb_phystokv(vtophys(jb_kread_ptr(pmap_self() + koffsetof(pmap, ttep)), (uint64_t)&output));
 		kRegisterState threadState = { 0 };
 		threadState.pc = kgadget(pacda);
 		threadState.x[1] = pointer;

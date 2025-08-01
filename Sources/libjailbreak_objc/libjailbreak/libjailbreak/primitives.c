@@ -69,7 +69,7 @@ int jb_physreadbuf_virt(uint64_t physaddr, void* output, size_t size)
 
     __block int pr = 0;
     jb_enumerate_pages(physaddr, size, P_PAGE_SIZE, ^bool(uint64_t curPhys, size_t curSize){
-        uint64_t curKaddr = phystokv(curPhys);
+        uint64_t curKaddr = jb_phystokv(curPhys);
         if (curKaddr == 0 && errno != 0) {
             pr = errno;
             return false;
@@ -87,7 +87,7 @@ int jb_physwritebuf_virt(uint64_t physaddr, const void* input, size_t size)
 {
     __block int pr = 0;
     jb_enumerate_pages(physaddr, size, P_PAGE_SIZE, ^bool(uint64_t curPhys, size_t curSize){
-        uint64_t curKaddr = phystokv(curPhys);
+        uint64_t curKaddr = jb_phystokv(curPhys);
         if (curKaddr == 0 && errno != 0) {
             pr = errno;
             return false;

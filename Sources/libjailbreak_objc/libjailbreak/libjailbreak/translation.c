@@ -7,7 +7,7 @@
 
 // Address translation physical <-> virtual
 
-uint64_t phystokv(uint64_t pa)
+uint64_t jb_phystokv(uint64_t pa)
 {
 	const uint64_t PTOV_TABLE_SIZE = 8;
 	struct ptov_table_entry {
@@ -113,7 +113,7 @@ uint64_t vtophys_lvl(uint64_t tte_ttep, uint64_t va, uint64_t *leaf_level, uint6
 			tte_ttep = tteEntry & ARM_TTE_TABLE_MASK;
 		}
 		else {
-			tte_ttep = phystokv(tteEntry & ARM_TTE_TABLE_MASK);
+			tte_ttep = jb_phystokv(tteEntry & ARM_TTE_TABLE_MASK);
 		}
 	}
 
@@ -122,7 +122,7 @@ uint64_t vtophys_lvl(uint64_t tte_ttep, uint64_t va, uint64_t *leaf_level, uint6
 	return tte_ttep;
 }
 
-uint64_t vtophys(uint64_t tte_ttep, uint64_t va)
+uint64_t jb_vtophys(uint64_t tte_ttep, uint64_t va)
 {
 	uint64_t level = PMAP_TT_L3_LEVEL;
 	return vtophys_lvl(tte_ttep, va, &level, NULL);
@@ -130,11 +130,11 @@ uint64_t vtophys(uint64_t tte_ttep, uint64_t va)
 
 uint64_t kvtophys(uint64_t va)
 {
-	return vtophys(kconstant(cpuTTEP), va);
+	return jb_vtophys(kconstant(cpuTTEP), va);
 }
 
 void libjailbreak_translation_init(void)
 {
-	gPrimitives.phystokv = phystokv;
-	gPrimitives.vtophys  = vtophys;
+	gPrimitives.phystokv = jb_phystokv;
+	gPrimitives.vtophys  = jb_vtophys;
 }
