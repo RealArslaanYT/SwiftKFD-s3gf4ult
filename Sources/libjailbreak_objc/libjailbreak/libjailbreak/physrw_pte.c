@@ -76,7 +76,7 @@ void acquire_window(uint64_t pa, void (^block)(void *ua))
 int physrw_pte_physreadbuf(uint64_t pa, void* output, size_t size)
 {
 	__block int r = 0;
-	enumerate_pages(pa, size, PAGE_SIZE, ^bool(uint64_t curPA, size_t curSize) {
+	jb_enumerate_pages(pa, size, PAGE_SIZE, ^bool(uint64_t curPA, size_t curSize) {
 		acquire_window(curPA & ~PAGE_MASK, ^(void *ua) {
 			void *curUA = ((uint8_t*)ua) + (curPA & PAGE_MASK);
 			memcpy(&output[curPA - pa], curUA, curSize);
@@ -90,7 +90,7 @@ int physrw_pte_physreadbuf(uint64_t pa, void* output, size_t size)
 int physrw_pte_physwritebuf(uint64_t pa, const void* input, size_t size)
 {
 	__block int r = 0;
-	enumerate_pages(pa, size, PAGE_SIZE, ^bool(uint64_t curPA, size_t curSize) {
+	jb_enumerate_pages(pa, size, PAGE_SIZE, ^bool(uint64_t curPA, size_t curSize) {
 		acquire_window(curPA & ~PAGE_MASK, ^(void *ua) {
 			void *curUA = ((uint8_t*)ua) + (curPA & PAGE_MASK);
 			memcpy(curUA, &input[curPA - pa], curSize);
@@ -115,13 +115,13 @@ int physrw_pte_handoff(pid_t pid)
 		uint64_t task = proc_task(proc);
 		if (!task) { ret = -3; break; };
 
-		uint64_t vmMap = kread_ptr(task + koffsetof(task, map));
+		uint64_t vmMap = jb_kread_ptr(task + koffsetof(task, map));
 		if (!vmMap) { ret = -4; break; };
 
-		uint64_t pmap = kread_ptr(vmMap + koffsetof(vm_map, pmap));
+		uint64_t pmap = jb_kread_ptr(vmMap + koffsetof(vm_map, pmap));
 		if (!pmap) { ret = -5; break; };
 
-		uint64_t ttep = kread64(pmap + koffsetof(pmap, ttep));
+		uint64_t ttep = jb_kread64(pmap + koffsetof(pmap, ttep));
 
 		// Allocate magic page table to our process at last possible location
 		uint64_t leafLevel;
@@ -142,7 +142,7 @@ int physrw_pte_handoff(pid_t pid)
 					}
 				}
 				uint64_t newTable = pmap_alloc_page_table(pmap, pt_va);
-				physwrite64(pt, newTable | ARM_TTE_VALID | ARM_TTE_TYPE_TABLE);
+				jb_physwrite64(pt, newTable | ARM_TTE_VALID | ARM_TTE_TYPE_TABLE);
 			}
 		} while (leafLevel < PMAP_TT_L3_LEVEL);
 
@@ -151,7 +151,7 @@ int physrw_pte_handoff(pid_t pid)
 		leafLevel = PMAP_TT_L2_LEVEL;
 		uint64_t magicPT = vtophys_lvl(ttep, MAGIC_PT_ADDRESS, &leafLevel, NULL);
 		if (!magicPT) { ret = -6; break; }
-		physwrite64(magicPT, magicPT | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
+		jb_physwrite64(magicPT, magicPT | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
 
 		// Map in the pmap at MAGIC_PT_ADDRESS+PAGE_SIZE
 		uint64_t sw_asid = pmap + koffsetof(pmap, sw_asid);
@@ -159,7 +159,7 @@ int physrw_pte_handoff(pid_t pid)
 		uint64_t sw_asid_page_pa = kvtophys(sw_asid_page);
 		uint64_t sw_asid_pageoff = sw_asid & PAGE_MASK;
 		gSwAsid = (uint8_t *)(MAGIC_PT_ADDRESS + PAGE_SIZE + sw_asid_pageoff);
-		physwrite64(magicPT+8, sw_asid_page_pa | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
+		jb_physwrite64(magicPT+8, sw_asid_page_pa | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
 
 		if (pthread_mutex_init(&gLock, NULL) != 0) { ret = -7; break; }
 

@@ -21,7 +21,7 @@ extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t* __restric
 void proc_iterate(void (^itBlock)(uint64_t, bool*))
 {
 	uint64_t proc = ksymbol(allproc);
-	while((proc = kread_ptr(proc + koffsetof(proc, list_next))))
+	while((proc = jb_kread_ptr(proc + koffsetof(proc, list_next))))
 	{
 		bool stop = false;
 		itBlock(proc, &stop);
@@ -67,24 +67,24 @@ struct k_posix_cred proc_get_posix_cred(uint64_t proc, bool iOS14)
 {
     struct k_posix_cred pcred = {0};
     int ucred_off = iOS14 ? 0xF0 : 0xD8;
-    uint64_t unPACed_ptr = kread_ptr(proc);
+    uint64_t unPACed_ptr = jb_kread_ptr(proc);
     uint64_t mask = get_pac_mask(unPACed_ptr);
-    uint64_t ucred = kread_ptr(proc + ucred_off); // proc->ucred
+    uint64_t ucred = jb_kread_ptr(proc + ucred_off); // proc->ucred
     ucred |= mask;
     uint64_t posix_cred_kptr = ucred + 0x18; // ucred->posix_cred
-    kreadbuf(posix_cred_kptr, &pcred, sizeof(struct k_posix_cred));
+    jb_kreadbuf(posix_cred_kptr, &pcred, sizeof(struct k_posix_cred));
     return pcred;
 }
 
 void proc_set_posix_cred(uint64_t proc, struct k_posix_cred posix_cred, bool iOS14)
 {
     int ucred_off = iOS14 ? 0xF0 : 0xD8;
-    uint64_t unPACed_ptr = kread_ptr(proc);
+    uint64_t unPACed_ptr = jb_kread_ptr(proc);
     uint64_t mask = get_pac_mask(unPACed_ptr);
-    uint64_t ucred = kread_ptr(proc + ucred_off); // proc->ucred
+    uint64_t ucred = jb_kread_ptr(proc + ucred_off); // proc->ucred
     ucred |= mask;
     uint64_t posix_cred_kptr = ucred + 0x18;
-    kwritebuf(posix_cred_kptr, &posix_cred, sizeof(struct k_posix_cred));
+    jb_kwritebuf(posix_cred_kptr, &posix_cred, sizeof(struct k_posix_cred));
 }
 
 uint64_t task_self(void)
@@ -102,7 +102,7 @@ uint64_t vm_map_self(void)
 	static uint64_t gSelfMap = 0;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		gSelfMap = kread_ptr(task_self() + koffsetof(task, map));
+		gSelfMap = jb_kread_ptr(task_self() + koffsetof(task, map));
 	});
 	return gSelfMap;
 }
@@ -112,25 +112,25 @@ uint64_t pmap_self(void)
 	static uint64_t gSelfPmap = 0;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		gSelfPmap = kread_ptr(vm_map_self() + koffsetof(vm_map, pmap));
+		gSelfPmap = jb_kread_ptr(vm_map_self() + koffsetof(vm_map, pmap));
 	});
 	return gSelfPmap;
 }
 
 uint64_t task_get_ipc_port_table_entry(uint64_t task, mach_port_t port)
 {
-	uint64_t itk_space = kread_ptr(task + koffsetof(task, itk_space));
+	uint64_t itk_space = jb_kread_ptr(task + koffsetof(task, itk_space));
 	return ipc_entry_lookup(itk_space, port);
 }
 
 uint64_t task_get_ipc_port_object(uint64_t task, mach_port_t port)
 {
-	return kread_ptr(task_get_ipc_port_table_entry(task, port) + koffsetof(ipc_entry, object));
+	return jb_kread_ptr(task_get_ipc_port_table_entry(task, port) + koffsetof(ipc_entry, object));
 }
 
 uint64_t task_get_ipc_port_kobject(uint64_t task, mach_port_t port)
 {
-	return kread_ptr(task_get_ipc_port_object(task, port) + koffsetof(ipc_port, kobject));
+	return jb_kread_ptr(task_get_ipc_port_object(task, port) + koffsetof(ipc_port, kobject));
 }
 
 uint64_t alloc_page_table_unassigned(void)
@@ -138,7 +138,7 @@ uint64_t alloc_page_table_unassigned(void)
 	thread_caffeinate_start();
 
 	uint64_t pmap = pmap_self();
-	uint64_t ttep = kread64(pmap + koffsetof(pmap, ttep));
+	uint64_t ttep = jb_kread64(pmap + koffsetof(pmap, ttep));
 
 	void *free_lvl2 = NULL;
 	uint64_t tte_lvl2 = 0;
@@ -159,10 +159,10 @@ uint64_t alloc_page_table_unassigned(void)
 
 		uint64_t pvh = pai_to_pvh(pa_index(allocatedPT));
 		uint64_t ptdp = pvh_ptd(pvh);
-		uint64_t pinfo = kread64(ptdp + koffsetof(pt_desc, ptd_info)); // TODO: Fake 16k devices (4 values)
+		uint64_t pinfo = jb_kread64(ptdp + koffsetof(pt_desc, ptd_info)); // TODO: Fake 16k devices (4 values)
 		pinfo_pa = kvtophys(pinfo);
 
-		uint16_t refCount = physread16(pinfo_pa);
+		uint16_t refCount = jb_physread16(pinfo_pa);
 		if (refCount != 1) {
 			// Something is off, retry
 			free(free_lvl2);
@@ -198,29 +198,29 @@ uint64_t alloc_page_table_unassigned(void)
 	}*/
 
 	// Bump reference count of our allocated page table
-	physwrite16(pinfo_pa, 0x1337);
+	jb_physwrite16(pinfo_pa, 0x1337);
 
 	// Deallocate address range (our allocated page table will stay because we bumped it's reference count)
 	free(free_lvl2);
 
 	// Remove our allocated page table from it's original location (leak it)
-	physwrite64(tte_lvl2, 0);
+	jb_physwrite64(tte_lvl2, 0);
 
 	// Ensure there is at least one entry in page table
 	// Attempts to prevent "pte is empty" panic
 	// Sometimes weird prefetches happen so this has to be a valid physical page to ensure those don't panic
 	// Disabled for now cause it causes super weird issues
-	//physwrite64(allocatedPT, kconstant(physBase) | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
+	//jb_physwrite64(allocatedPT, kconstant(physBase) | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
 
 	// Reference count of new page table must be 0!
 	// original ref count is 1 because the table holds one PTE
 	// Our new PTEs are not part of the pmap layer though so refcount needs to be 0
-	physwrite16(pinfo_pa, 0);
+	jb_physwrite16(pinfo_pa, 0);
 
 	// After we leaked the page table, the ledger still thinks it belongs to our process
 	// We need to remove it from there aswell so that the process doesn't get jetsam killed
 	// (This ended up more complicated than I thought, so I just disabled jetsam in launchd)
-	//uint64_t ledger = kread_ptr(pmap + koffsetof(pmap, ledger));
+	//uint64_t ledger = jb_kread_ptr(pmap + koffsetof(pmap, ledger));
 	//uint64_t ledger_pa = kvtophys(ledger);
 	//int page_table_ledger = physread32(ledger_pa + koffsetof(_task_ledger_indices, page_table));
 	//physwrite32(ledger_pa + koffsetof(_task_ledger_indices, page_table), page_table_ledger - 1);
@@ -247,12 +247,12 @@ uint64_t pmap_alloc_page_table(uint64_t pmap, uint64_t va)
 	// At this point the allocated page table is associated
 	// to the pmap of this process alongside the address it was allocated on
 	// We now need to replace the association with the context in which it will be used
-	physwrite64(ptdp_pa + koffsetof(pt_desc, pmap), pmap);
+	jb_physwrite64(ptdp_pa + koffsetof(pt_desc, pmap), pmap);
 
 	// On A14+ PT_INDEX_MAX is 4, for whatever reason
 	// However in practice, only the first slot is used...
 	// TODO: On devices where kernel page size != userland page size, populate all 4 values
-	physwrite64(ptdp_pa + koffsetof(pt_desc, va), va);
+	jb_physwrite64(ptdp_pa + koffsetof(pt_desc, va), va);
 
 	return tt_p;
 }
@@ -262,7 +262,7 @@ int pmap_map_in(uint64_t pmap, uint64_t uaStart, uint64_t paStart, uint64_t size
 	thread_caffeinate_start();
 
 	uint64_t uaEnd = uaStart + size;
-	uint64_t ttep = kread64(pmap + koffsetof(pmap, ttep));
+	uint64_t ttep = jb_kread64(pmap + koffsetof(pmap, ttep));
 
 	// Sanity check: Ensure the entire area to be mapped in is not mapped to anything yet
 	for(uint64_t ua = uaStart; ua < uaEnd; ua += PAGE_SIZE) {
@@ -291,7 +291,7 @@ int pmap_map_in(uint64_t pmap, uint64_t uaStart, uint64_t paStart, uint64_t size
 				}
 				uint64_t newTable = pmap_alloc_page_table(pmap, pt_va);
 				if (newTable) {
-					physwrite64(pt, newTable | ARM_TTE_VALID | ARM_TTE_TYPE_TABLE);
+					jb_physwrite64(pt, newTable | ARM_TTE_VALID | ARM_TTE_TYPE_TABLE);
 				}
 				else { thread_caffeinate_stop(); return -2; }
 			}
@@ -305,7 +305,7 @@ int pmap_map_in(uint64_t pmap, uint64_t uaStart, uint64_t paStart, uint64_t size
 		uint64_t pt = 0;
 
 		vtophys_lvl(ttep, ua, &leafLevel, &pt);
-		physwrite64(pt, pa | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
+		jb_physwrite64(pt, pa | PERM_TO_PTE(PERM_KRW_URW) | PTE_NON_GLOBAL | PTE_OUTER_SHAREABLE | PTE_LEVEL3_ENTRY);
 	}
 
 	thread_caffeinate_stop();
@@ -315,15 +315,15 @@ int pmap_map_in(uint64_t pmap, uint64_t uaStart, uint64_t paStart, uint64_t size
 int sign_kernel_thread(uint64_t proc, mach_port_t threadPort)
 {
 	uint64_t threadKobj = task_get_ipc_port_kobject(proc_task(proc), threadPort);
-	uint64_t threadContext = kread_ptr(threadKobj + koffsetof(thread, machine_contextData));
+	uint64_t threadContext = jb_kread_ptr(threadKobj + koffsetof(thread, machine_contextData));
 
-	uint64_t pc   = kread64(threadContext + offsetof(kRegisterState, pc));
-	uint64_t cpsr = kread64(threadContext + offsetof(kRegisterState, cpsr));
-	uint64_t lr   = kread64(threadContext + offsetof(kRegisterState, lr));
-	uint64_t x16  = kread64(threadContext + offsetof(kRegisterState, x[16]));
-	uint64_t x17  = kread64(threadContext + offsetof(kRegisterState, x[17]));
+	uint64_t pc   = jb_kread64(threadContext + offsetof(kRegisterState, pc));
+	uint64_t cpsr = jb_kread64(threadContext + offsetof(kRegisterState, cpsr));
+	uint64_t lr   = jb_kread64(threadContext + offsetof(kRegisterState, lr));
+	uint64_t x16  = jb_kread64(threadContext + offsetof(kRegisterState, x[16]));
+	uint64_t x17  = jb_kread64(threadContext + offsetof(kRegisterState, x[17]));
 
-	return kcall(NULL, ksymbol(ml_sign_thread_state), 6, (uint64_t[]){ threadContext, pc, cpsr, lr, x16, x17 });
+	return jb_kcall(NULL, ksymbol(ml_sign_thread_state), 6, (uint64_t[]){ threadContext, pc, cpsr, lr, x16, x17 });
 }
 
 uint64_t kpacda(uint64_t pointer, uint64_t modifier)
@@ -337,13 +337,13 @@ uint64_t kpacda(uint64_t pointer, uint64_t modifier)
 		// | ret                  |
 		// |----------------------|
 		uint64_t output = 0;
-		uint64_t output_kernelVA = phystokv(vtophys(kread_ptr(pmap_self() + koffsetof(pmap, ttep)), (uint64_t)&output));
+		uint64_t output_kernelVA = phystokv(vtophys(jb_kread_ptr(pmap_self() + koffsetof(pmap, ttep)), (uint64_t)&output));
 		kRegisterState threadState = { 0 };
 		threadState.pc = kgadget(pacda);
 		threadState.x[1] = pointer;
 		threadState.x[9] = modifier;
 		threadState.x[8] = output_kernelVA;
-		kexec(&threadState);
+		jb_kexec(&threadState);
 		return output;
 	}
 	return 0;
@@ -372,17 +372,17 @@ int kwrite1_bits(uint64_t startPtr, uint32_t bitCount)
 		}
 	}
 
-	return kwritebuf(startPtr, buf, byteSize);
+	return jb_kwritebuf(startPtr, buf, byteSize);
 }
 
 void proc_allow_all_syscalls(uint64_t proc)
 {
 	if (!gSystemInfo.kernelStruct.proc_ro.exists) return;
-	uint64_t proc_ro = kread_ptr(proc + koffsetof(proc, proc_ro));
+	uint64_t proc_ro = jb_kread_ptr(proc + koffsetof(proc, proc_ro));
 
-	uint64_t bsdFilter = kread_ptr(proc_ro + koffsetof(proc_ro, syscall_filter_mask));
-	uint64_t machFilter = kread_ptr(proc_ro + koffsetof(proc_ro, mach_trap_filter_mask));
-	uint64_t machKobjFilter = kread_ptr(proc_ro + koffsetof(proc_ro, mach_kobj_filter_mask));
+	uint64_t bsdFilter = jb_kread_ptr(proc_ro + koffsetof(proc_ro, syscall_filter_mask));
+	uint64_t machFilter = jb_kread_ptr(proc_ro + koffsetof(proc_ro, mach_trap_filter_mask));
+	uint64_t machKobjFilter = jb_kread_ptr(proc_ro + koffsetof(proc_ro, mach_kobj_filter_mask));
 
 	if (bsdFilter) {
 		kwrite1_bits(bsdFilter, kconstant(nsysent));
@@ -391,7 +391,7 @@ void proc_allow_all_syscalls(uint64_t proc)
 		kwrite1_bits(machFilter, kconstant(mach_trap_count));
 	}
 	if (machKobjFilter) {
-		kwrite1_bits(machKobjFilter, kread64(ksymbol(mach_kobj_count)));
+		kwrite1_bits(machKobjFilter, jb_kread64(ksymbol(mach_kobj_count)));
 	}
 }
 

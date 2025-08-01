@@ -15,7 +15,7 @@ uint64_t phystokv(uint64_t pa)
 		uint64_t va;
 		uint64_t len;
 	} ptov_table[PTOV_TABLE_SIZE];
-	kreadbuf(ksymbol(ptov_table), &ptov_table[0], sizeof(ptov_table));
+	jb_kreadbuf(ksymbol(ptov_table), &ptov_table[0], sizeof(ptov_table));
 
 	for (uint64_t i = 0; (i < PTOV_TABLE_SIZE) && (ptov_table[i].len != 0); i++) {
 		if ((pa >= ptov_table[i].pa) && (pa < (ptov_table[i].pa + ptov_table[i].len))) {
@@ -83,13 +83,13 @@ uint64_t vtophys_lvl(uint64_t tte_ttep, uint64_t va, uint64_t *leaf_level, uint6
 		uint64_t tteEntry = 0;
 		if (physical) {
 			uint64_t tte_pa = tte_ttep + (tteIndex * sizeof(uint64_t));
-			tteEntry = physread64(tte_pa);
+			tteEntry = jb_physread64(tte_pa);
 			if (leaf_tte_ttep) *leaf_tte_ttep = tte_pa;
 			if (leaf_level) *leaf_level = curLevel;
 		}
 		else if (gPrimitives.kreadbuf && !physical) {
 			uint64_t tte_va = tte_ttep + (tteIndex * sizeof(uint64_t));
-			tteEntry = kread64(tte_va);
+			tteEntry = jb_kread64(tte_va);
 			if (leaf_tte_ttep) *leaf_tte_ttep = tte_va;
 			if (leaf_level) *leaf_level = curLevel;
 		}

@@ -13,7 +13,7 @@ uint64_t proc_find(pid_t pidToFind)
 	// Attempts to avoids conditions where we got thrown off by modifications
 	for (int i = 0; i < 5 && !foundProc; i++) {
 		proc_iterate(^(uint64_t proc, bool *stop) {
-			pid_t pid = kread32(proc + koffsetof(proc, pid));
+			pid_t pid = jb_kread32(proc + koffsetof(proc, pid));
 			if (pid == pidToFind) {
 				foundProc = proc;
 				*stop = true;
@@ -33,7 +33,7 @@ uint64_t proc_task(uint64_t proc)
 {
 	if (koffsetof(proc, task)) {
 		// iOS <= 15: proc has task attribute
-		return kread_ptr(proc + koffsetof(proc, task));
+		return jb_kread_ptr(proc + koffsetof(proc, task));
 	}
 	else {
 		// iOS >= 16: task is always at "proc + sizeof(proc)"
@@ -44,33 +44,33 @@ uint64_t proc_task(uint64_t proc)
 uint64_t proc_ucred(uint64_t proc)
 {
 	if (gSystemInfo.kernelStruct.proc_ro.exists) {
-		uint64_t proc_ro = kread_ptr(proc + koffsetof(proc, proc_ro));
-		return kread_ptr(proc_ro + koffsetof(proc_ro, ucred));
+		uint64_t proc_ro = jb_kread_ptr(proc + koffsetof(proc, proc_ro));
+		return jb_kread_ptr(proc_ro + koffsetof(proc_ro, ucred));
 	}
 	else {
-		return kread_ptr(proc + koffsetof(proc, ucred));
+		return jb_kread_ptr(proc + koffsetof(proc, ucred));
 	}
 }
 
 uint32_t proc_getcsflags(uint64_t proc)
 {
 	if (gSystemInfo.kernelStruct.proc_ro.exists) {
-		uint64_t proc_ro = kread_ptr(proc + koffsetof(proc, proc_ro));
-		return kread32(proc_ro + koffsetof(proc_ro, csflags));
+		uint64_t proc_ro = jb_kread_ptr(proc + koffsetof(proc, proc_ro));
+		return jb_kread32(proc_ro + koffsetof(proc_ro, csflags));
 	}
 	else {
-		return kread32(proc + koffsetof(proc, csflags));
+		return jb_kread32(proc + koffsetof(proc, csflags));
 	}
 }
 
 void proc_csflags_update(uint64_t proc, uint32_t flags)
 {
 	if (gSystemInfo.kernelStruct.proc_ro.exists) {
-		uint64_t proc_ro = kread_ptr(proc + koffsetof(proc, proc_ro));
-		kwrite32(proc_ro + koffsetof(proc_ro, csflags), flags);
+		uint64_t proc_ro = jb_kread_ptr(proc + koffsetof(proc, proc_ro));
+		jb_kwrite32(proc_ro + koffsetof(proc_ro, csflags), flags);
 	}
 	else {
-		kwrite32(proc + koffsetof(proc, csflags), flags);
+		jb_kwrite32(proc + koffsetof(proc, csflags), flags);
 	}
 }
 
@@ -89,10 +89,10 @@ uint64_t ipc_entry_lookup(uint64_t space, mach_port_name_t name)
 	uint64_t table = 0;
 	// New format in iOS 16.1
 	if (gSystemInfo.kernelStruct.ipc_space.table_uses_smr) {
-		table = kread_smrptr(space + koffsetof(ipc_space, table));
+		table = jb_kread_smrptr(space + koffsetof(ipc_space, table));
 	}
 	else {
-		table = kread_ptr(space + koffsetof(ipc_space, table));
+		table = jb_kread_ptr(space + koffsetof(ipc_space, table));
 	}
 
 	return (table + (ksizeof(ipc_entry) * (name >> 8)));
@@ -100,29 +100,29 @@ uint64_t ipc_entry_lookup(uint64_t space, mach_port_name_t name)
 
 uint64_t pa_index(uint64_t pa)
 {
-	return atop(pa - kread64(ksymbol(vm_first_phys)));
+	return atop(pa - jb_kread64(ksymbol(vm_first_phys)));
 }
 
 uint64_t pai_to_pvh(uint64_t pai)
 {
-	return kread64(ksymbol(pv_head_table)) + (pai * 8);
+	return jb_kread64(ksymbol(pv_head_table)) + (pai * 8);
 }
 
 uint64_t pvh_ptd(uint64_t pvh)
 {
-	return ((kread64(pvh) & PVH_LIST_MASK) | PVH_HIGH_FLAGS);
+	return ((jb_kread64(pvh) & PVH_LIST_MASK) | PVH_HIGH_FLAGS);
 }
 
 void task_set_memory_ownership_transfer(uint64_t task, bool value)
 {
-	kwrite8(task + koffsetof(task, task_can_transfer_memory_ownership), !!value);
+	jb_kwrite8(task + koffsetof(task, task_can_transfer_memory_ownership), !!value);
 }
 
 uint64_t mac_label_get(uint64_t label, int slot)
 {
     // On 15.0 - 15.1.1, 0 is the equivalent of -1 on 15.2+
     // So, treat 0 as -1 there
-    uint64_t value = kread_ptr(label + ((slot + 1) * sizeof(uint64_t)));
+    uint64_t value = jb_kread_ptr(label + ((slot + 1) * sizeof(uint64_t)));
     if (!gSystemInfo.kernelStruct.proc_ro.exists && value == 0) value = -1;
     return value;
 }
@@ -137,5 +137,5 @@ void mac_label_set(uint64_t label, int slot, uint64_t value)
         return;
     }
 #endif
-    kwrite64(label + ((slot + 1) * sizeof(uint64_t)), value);
+    jb_kwrite64(label + ((slot + 1) * sizeof(uint64_t)), value);
 }

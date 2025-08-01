@@ -9,78 +9,78 @@
 
 uint64_t IOSurfaceRootUserClient_get_surfaceClientById(uint64_t rootUserClient, uint32_t surfaceId)
 {
-	uint64_t surfaceClientsArray = kread_ptr(rootUserClient + 0x118);
-	return kread_ptr(surfaceClientsArray + (sizeof(uint64_t)*surfaceId));
+	uint64_t surfaceClientsArray = jb_kread_ptr(rootUserClient + 0x118);
+	return jb_kread_ptr(surfaceClientsArray + (sizeof(uint64_t)*surfaceId));
 }
 
 uint64_t IOSurfaceClient_get_surface(uint64_t surfaceClient)
 {
-	return kread_ptr(surfaceClient + 0x40);
+	return jb_kread_ptr(surfaceClient + 0x40);
 }
 
 uint64_t IOSurfaceSendRight_get_surface(uint64_t surfaceSendRight)
 {
-	return kread_ptr(surfaceSendRight + 0x18);	
+	return jb_kread_ptr(surfaceSendRight + 0x18);	
 }
 
 uint64_t IOSurface_get_ranges(uint64_t surface)
 {
-	return kread_ptr(surface + 0x3e0);
+	return jb_kread_ptr(surface + 0x3e0);
 }
 
 void IOSurface_set_ranges(uint64_t surface, uint64_t ranges)
 {
-	kwrite64(surface + 0x3e0, ranges);
+	jb_kwrite64(surface + 0x3e0, ranges);
 }
 
 uint64_t IOSurface_get_memoryDescriptor(uint64_t surface)
 {
-	return kread_ptr(surface + 0x38);
+	return jb_kread_ptr(surface + 0x38);
 }
 
 uint64_t IOMemoryDescriptor_get_ranges(uint64_t memoryDescriptor)
 {
-	return kread_ptr(memoryDescriptor + 0x60);
+	return jb_kread_ptr(memoryDescriptor + 0x60);
 }
 
 uint64_t IOMemorydescriptor_get_size(uint64_t memoryDescriptor)
 {
-	return kread64(memoryDescriptor + 0x50);
+	return jb_kread64(memoryDescriptor + 0x50);
 }
 
 void IOMemoryDescriptor_set_size(uint64_t memoryDescriptor, uint64_t size)
 {
-	kwrite64(memoryDescriptor + 0x50, size);
+	jb_kwrite64(memoryDescriptor + 0x50, size);
 }
 
 void IOMemoryDescriptor_set_wired(uint64_t memoryDescriptor, bool wired)
 {
-	kwrite8(memoryDescriptor + 0x88, wired);
+	jb_kwrite8(memoryDescriptor + 0x88, wired);
 }
 
 uint32_t IOMemoryDescriptor_get_flags(uint64_t memoryDescriptor)
 {
-	return kread32(memoryDescriptor + 0x20);
+	return jb_kread32(memoryDescriptor + 0x20);
 }
 
 void IOMemoryDescriptor_set_flags(uint64_t memoryDescriptor, uint32_t flags)
 {
-	kwrite8(memoryDescriptor + 0x20, flags);
+	jb_kwrite8(memoryDescriptor + 0x20, flags);
 }
 
 void IOMemoryDescriptor_set_memRef(uint64_t memoryDescriptor, uint64_t memRef)
 {
-	kwrite64(memoryDescriptor + 0x28, memRef);
+	jb_kwrite64(memoryDescriptor + 0x28, memRef);
 }
 
 uint64_t IOSurface_get_rangeCount(uint64_t surface)
 {
-	return kread_ptr(surface + 0x3e8);
+	return jb_kread_ptr(surface + 0x3e8);
 }
 
 void IOSurface_set_rangeCount(uint64_t surface, uint32_t rangeCount)
 {
-	kwrite32(surface + 0x3e8, rangeCount);
+	jb_kwrite32(surface + 0x3e8, rangeCount);
 }
 
 static mach_port_t IOSurface_map_getSurfacePort(uint64_t magic)
@@ -106,14 +106,14 @@ int IOSurface_map(uint64_t pa, uint64_t size, void **uaddr)
 	uint64_t desc = IOSurface_get_memoryDescriptor(surface);
 	uint64_t ranges = IOMemoryDescriptor_get_ranges(desc);
 
-	kwrite64(ranges, pa);
-	kwrite64(ranges+8, size);
+	jb_kwrite64(ranges, pa);
+	jb_kwrite64(ranges+8, size);
 
 	IOMemoryDescriptor_set_size(desc, size);
 
-	kwrite64(desc + 0x70, 0);
-	kwrite64(desc + 0x18, 0);
-	kwrite64(desc + 0x90, 0);
+	jb_kwrite64(desc + 0x70, 0);
+	jb_kwrite64(desc + 0x18, 0);
+	jb_kwrite64(desc + 0x90, 0);
 
 	IOMemoryDescriptor_set_wired(desc, true);
 

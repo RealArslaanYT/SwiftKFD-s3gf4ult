@@ -69,10 +69,10 @@ int physrw_handoff(pid_t pid)
 		uint64_t task = proc_task(proc);
 		if (!task) { ret = -3; break; };
 
-		uint64_t vmMap = kread_ptr(task + koffsetof(task, map));
+		uint64_t vmMap = jb_kread_ptr(task + koffsetof(task, map));
 		if (!vmMap) { ret = -4; break; };
 
-		uint64_t pmap = kread_ptr(vmMap + koffsetof(vm_map, pmap));
+		uint64_t pmap = jb_kread_ptr(vmMap + koffsetof(vm_map, pmap));
 		if (!pmap) { ret = -5; break; };
 
 		// Map the entire kernel physical address space into the userland process, starting at PPLRW_USER_MAPPING_OFFSET

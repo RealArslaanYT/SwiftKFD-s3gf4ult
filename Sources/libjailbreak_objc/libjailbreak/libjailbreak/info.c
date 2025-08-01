@@ -250,11 +250,11 @@ void jbinfo_initialize_hardcoded_offsets(void)
 void jbinfo_initialize_boot_constants(void)
 {
 	gSystemInfo.kernelConstant.base     = kconstant(staticBase) + gSystemInfo.kernelConstant.slide;
-	gSystemInfo.kernelConstant.virtBase = kread64(ksymbol(gVirtBase));
+	gSystemInfo.kernelConstant.virtBase = jb_kread64(ksymbol(gVirtBase));
 	//gSystemInfo.kernelConstant.virtSize = ...;
-	gSystemInfo.kernelConstant.physBase = kread64(ksymbol(gPhysBase));
-	gSystemInfo.kernelConstant.physSize = kread64(ksymbol(gPhysSize));
-	gSystemInfo.kernelConstant.cpuTTEP  = kread64(ksymbol(cpu_ttep));
+	gSystemInfo.kernelConstant.physBase = jb_kread64(ksymbol(gPhysBase));
+	gSystemInfo.kernelConstant.physSize = jb_kread64(ksymbol(gPhysSize));
+	gSystemInfo.kernelConstant.cpuTTEP  = jb_kread64(ksymbol(cpu_ttep));
 }
 
 xpc_object_t jbinfo_get_serialized(void)
