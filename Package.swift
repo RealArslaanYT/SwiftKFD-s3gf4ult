@@ -22,7 +22,7 @@ let package = Package(
             publicHeadersPath: "."),
         .target(
             name: "libjailbreak_objc",
-            dependencies: ["libarchive", "lz4", "xz"],
+            dependencies: ["libarchive", "lz4", "xz", "zlib", "bz2", "iconv"],
             path: "Sources/libjailbreak_objc",
             publicHeadersPath: "."),
         .binaryTarget(
@@ -36,6 +36,17 @@ let package = Package(
         .binaryTarget(
             name: "xz",
             path: "ios/xcframeworks/xz.xcframework"
+        ),
+        .systemLibrary(
+            name: "zlib",
+            pkgConfig: "zlib"
+        ),
+        .systemLibrary(
+            name: "bz2",
+            pkgConfig: "bzip2"
+        ),
+        .systemLibrary(
+            name: "iconv"
         ),
     ]
 )
