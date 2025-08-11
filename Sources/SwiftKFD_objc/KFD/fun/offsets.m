@@ -3,11 +3,17 @@
 //  kfd
 //
 //  Created by Seo Hyun-gyu on 2023/07/29.
-//  Edited by Arslaan Pathan on 2025/07/31.
+//  Edited by Arslaan Pathan on 2025/08/01.
 //
 
 #include "offsets.h"
+#include "../../../libjailbreak_objc/libjailbreak/libjailbreak/info.h"
+#include "../../../libjailbreak_objc/libjailbreak/libjailbreak/primitives_external.h"
+#include "../libkfd.h"
+#undef T1SZ_BOOT
 #include <Foundation/Foundation.h>
+#import <os/proc.h>
+#import <xpc/xpc.h>
 
 uint32_t off_p_list_le_prev = 0;
 uint32_t off_p_proc_ro = 0;
@@ -103,6 +109,85 @@ uint64_t off_gvirtbase = 0;
 uint64_t off_ptov__table = 0;
 
 void _offsets_init(void) {
+    bool isiOS15 = false;
+    
+    u64 kread_method = 0, kwrite_method = 0;
+    kread_method = kread_sem_open;
+    kwrite_method = kwrite_sem_open;
+    
+    uint64_t vm_map__pmap = koffsetof(vm_map, pmap);
+
+    uint64_t pmap_to_hint = 0; // offset between vm_map->pmap and vm_map->hint
+    if (@available(iOS 16.0, *)) {
+        pmap_to_hint = 0x58;
+    }
+    else if(@available(iOS 15.4, *)) {
+        pmap_to_hint = 0x38;
+    }
+    else {
+        pmap_to_hint = 0xB8;
+    }
+
+    dynamic_system_info = (struct dynamic_info){
+        .kread_kqueue_workloop_ctl_supported = true,
+        .krkw_iosurface_supported = false,
+        .perf_supported = true,
+        
+        .kernelcache__static_base = kconstant(staticBase),
+
+        .proc__p_list__le_next = koffsetof(proc, list_next),
+        .proc__p_list__le_prev = koffsetof(proc, list_prev),
+        .proc__p_pid           = koffsetof(proc, pid),
+        .proc__p_fd__fd_ofiles = koffsetof(proc, fd) + koffsetof(filedesc, ofiles_start),
+        .proc__object_size     = ksizeof(proc),
+    
+        .task__map = koffsetof(task, map),
+    
+        .vm_map__hdr_links_prev             = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, prev),
+        .vm_map__hdr_links_next             = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, next),
+        .vm_map__min_offset                 = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, min),
+        .vm_map__max_offset                 = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, max),
+        .vm_map__hdr_nentries               = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, max) + 0x8,
+        .vm_map__hdr_nentries_u64           = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, max) + 0x8,
+        .vm_map__hdr_rb_head_store_rbh_root = koffsetof(vm_map, hdr) + koffsetof(vm_map_header, links) + koffsetof(vm_map_links, max) + 0x18,
+    
+        .vm_map__pmap        = vm_map__pmap,
+        .vm_map__hint        = vm_map__pmap + pmap_to_hint,
+        .vm_map__hole_hint   = vm_map__pmap + pmap_to_hint + 0x8,
+        .vm_map__holes_list  = vm_map__pmap + pmap_to_hint + 0x10,
+        .vm_map__object_size = vm_map__pmap + pmap_to_hint + 0x28,
+        
+        .IOSurface__isa                 =   0x0,
+        .IOSurface__pixelFormat         =  0xa4,
+        .IOSurface__allocSize           =  0xac,
+        .IOSurface__useCountPtr         =  0xc0,
+        .IOSurface__indexedTimestampPtr = 0x360,
+        .IOSurface__readDisplacement    =  0x14,
+
+        .thread__thread_id = 0x400, // TODO: Universalize (Only relevant for kread_kqueue_workloop_ctl)
+
+        .kernelcache__allproc          = ksymbol(allproc),
+        
+        .kernelcache__cdevsw           = ksymbol(cdevsw),
+        .kernelcache__gPhysBase        = ksymbol(gPhysBase),
+        .kernelcache__gPhysSize        = ksymbol(gPhysSize),
+        .kernelcache__gVirtBase        = ksymbol(gVirtBase),
+        .kernelcache__perfmon_dev_open = ksymbol(perfmon_dev_open),
+        .kernelcache__perfmon_devices  = ksymbol(perfmon_devices),
+        .kernelcache__ptov_table       = ksymbol(ptov_table),
+        .kernelcache__vn_kqfilter      = ksymbol(vn_kqfilter),
+        
+        .device__T1SZ_BOOT            = kconstant(T1SZ_BOOT),
+        .device__ARM_TT_L1_INDEX_MASK = kconstant(ARM_TT_L1_INDEX_MASK),
+    };
+
+    if (isiOS15) {
+        dynamic_system_info.proc__task = 0x10;
+    }
+    if (@available(iOS 15.4, *)) {
+        dynamic_system_info.vm_map__hdr_rb_head_store_rbh_root -= 0x8;
+    }
+    
     // Kernelcache physical/virtual base addresses
     off_gphysbase = 0xFFFFFFF007A68000;
     off_gphysize = 0xFFFFFFF007A68008;

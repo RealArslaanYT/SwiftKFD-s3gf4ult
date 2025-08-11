@@ -14,17 +14,20 @@ let package = Package(
         .target(
             name: "SwiftKFD",
             dependencies: ["SwiftKFD_objc"],
-            path: "Sources/SwiftKFD"),
+            path: "Sources/SwiftKFD"
+        ),
         .target(
             name: "SwiftKFD_objc",
             dependencies: ["libjailbreak_objc"],
             path: "Sources/SwiftKFD_objc",
-            publicHeadersPath: "."),
+            publicHeadersPath: "."
+        ),
         .target(
             name: "libjailbreak_objc",
             dependencies: ["libarchive", "lz4", "xz", "zlib", "bz2", "iconv"],
             path: "Sources/libjailbreak_objc",
-            publicHeadersPath: "."),
+            publicHeadersPath: "."
+        ),
         .binaryTarget(
             name: "libarchive",
             path: "ios/xcframeworks/libarchive.xcframework"
@@ -39,6 +42,7 @@ let package = Package(
         ),
         .systemLibrary(
             name: "zlib",
+            path: "Sources/zlib",
             pkgConfig: "zlib"
         ),
         .systemLibrary(
